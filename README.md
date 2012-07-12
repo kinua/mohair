@@ -196,7 +196,11 @@ SELECT * FROM project;
 #### select specific columns with a condition
 
 ```coffeescript
-query = mohair.select('project', ['name', 'id']).where {hidden: true}
+mohair = require 'mohair'
+
+project = mohair.table 'project'
+
+query = project.select(['name', 'id']).where {hidden: true}
 ```
 
 **Note:** the last argument is a query object. see section `Query language` below for details.
@@ -218,6 +222,10 @@ SELECT name, id FROM project WHERE hidden = ?;
 #### join, groupBy and orderBy
 
 ```coffeescript
+mohair = require 'mohair'
+
+project = mohair.table 'project'
+
 query = project
     .select ['count(task.id) AS taskCount', 'project.*']
     .where {'project.visible': true}
@@ -277,7 +285,7 @@ mohair = require 'mohair'
 project = mohair.table 'project'
 
 query = mohair.transaction [
-    project.delete.where {id: 7}
+    project.delete().where {id: 7}
     project.update({name: 'New name'}).where {id: 8}
 ]
 ```

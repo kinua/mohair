@@ -118,26 +118,24 @@ INSERT INTO project (name, created_on, user_id) VALUES (?, NOW(), LAST_INSERT_ID
 
 #### update on duplicate key
 
-use the optional third parameter:
-
 ```coffeescript
 mohair = require 'mohair'
 
 project = mohair.table 'project'
 
-query = project.insert {
+query = project.insert
     id: 'foo'
     name: 'bar'
-}, {
+query.onDuplicateKeyUpdate
     name: 'bar'
     update_count: mohair.sql 'update_count + 1'
-}
 ```
 
 `query.sql()` returns:
 
 ```sql
-INSERT INTO project (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?, update_count = update_count + 1;
+INSERT INTO project (id, name) VALUES (?, ?)
+ON DUPLICATE KEY UPDATE name = ?, update_count = update_count + 1;
 ```
 
 `query.params()` returns:

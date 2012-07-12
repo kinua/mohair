@@ -115,12 +115,14 @@ LEFT JOIN task ON project.id = task.project_id
 WHERE project.visible = ?
 GROUP BY project.id
 ORDER BY project.created_on DESC;
+LIMIT ?
+OFFSET ?
 ```
 
 `query.params()` returns:
 
 ```coffeescript
-[true]
+[true, 10, 5]
 ```
 
 **Note:** use `join`, `leftJoin`, `rightJoin`, and `innerJoin` as needed.
@@ -361,7 +363,7 @@ id = ? AND hidden = ? AND name = 'Another project'
 
 #### comparison operators
 
-you can change the default comparison operator '=' as follows:
+you can change the default comparison operator `=` like this:
 
 ```coffeescript
 mohair = require 'mohair'

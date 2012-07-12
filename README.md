@@ -21,14 +21,16 @@ connection = mysql.createConnection
 
 connection.connect()
 
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.insert 'project',
+project = mohair.table 'project'
+
+query = project.insert
     name: 'Amazing Project'
     owner_id: 5
     hidden: false
 
-client.query m.sql(), m.params(), (err, result) ->
+client.query query.sql(), query.params(), (err, result) ->
     throw err if err?
     console.log result
 
@@ -40,21 +42,23 @@ client.end()
 #### insert a single row
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.insert 'project',
+project = mohair.table 'project'
+
+query = project.insert
     name: 'Amazing Project'
     owner_id: 5
     hidden: false
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 INSERT INTO project (name, owner_id, hidden) VALUES (?, ?, ?);
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 ['Amazing Project', 5, false]
@@ -63,21 +67,23 @@ INSERT INTO project (name, owner_id, hidden) VALUES (?, ?, ?);
 #### insert multiple rows at once
 
 ```coffeescript
-{insert, sql, params} = require('mohair')()
+mohair = require 'mohair'
 
-insert 'project', [
+project = mohair.table 'project'
+
+query = project.insert [
     {name: 'First project', hidden: true},
     {name: 'Second project', hidden: false}
 ]
 ```
 
-`sql()` returns:
+`query.sql()` returns:
 
 ```sql
 INSERT INTO project (name) VALUES (?, ?), (?, ?);
 ```
 
-`params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 ['First project', true, 'Second project', false]
@@ -88,21 +94,23 @@ INSERT INTO project (name) VALUES (?, ?), (?, ?);
 #### call some sql function inside the insert
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.insert 'project',
+project = mohair.table 'project'
+
+query = project.insert
     name: 'Another Project'
-    created_on: -> m.raw 'NOW()'
-    user_id: -> m.raw 'LAST_INSERT_ID()'
+    created_on: mohair.sql 'NOW()'
+    user_id: mohair.sql 'LAST_INSERT_ID()'
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 INSERT INTO project (name, created_on, user_id) VALUES (?, NOW(), LAST_INSERT_ID());
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 ['Another Project']
@@ -113,24 +121,26 @@ INSERT INTO project (name, created_on, user_id) VALUES (?, NOW(), LAST_INSERT_ID
 use the optional third parameter:
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.insert 'project', {
+project = mohair.table 'project'
+
+query = project.insert {
     id: 'foo'
     name: 'bar'
 }, {
     name: 'bar'
-    update_count: -> m.raw 'update_count + 1'
+    update_count: mohair.sql 'update_count + 1'
 }
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 INSERT INTO project (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?, update_count = update_count + 1;
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 ['foo', 'bar', 'bar']
@@ -139,23 +149,25 @@ INSERT INTO project (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?, u
 #### update a row
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.update 'project', {
+project = mohair.table 'project'
+
+query = project.update
     name: 'Even more amazing project'
     hidden: true
-}, {id: 7}
+query.where {id: 7}
 ```
 
 **Note:** the last argument is a query object. see section `Query language` below for details.
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 UPDATE project SET name = ?, hidden = ? WHERE id = ?;
 ```
 
-`m.params()` returns:
+`queryparams()` returns:
 
 ```coffeescript
 ['Even more amazing project', true, 7]
@@ -164,18 +176,20 @@ UPDATE project SET name = ?, hidden = ? WHERE id = ?;
 #### select everything
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.select 'project'
+project = mohair.table 'project'
+
+query = project.select()
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 SELECT * FROM project;
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 []
@@ -184,22 +198,20 @@ SELECT * FROM project;
 #### select specific columns with a condition
 
 ```coffeescript
-m = require('mohair')()
-
-m.select 'project', ['name', 'id'], {hidden: true}
+query = mohair.select('project', ['name', 'id']).where {hidden: true}
 ```
 
 **Note:** the last argument is a query object. see section `Query language` below for details.
 
 **Note:** the second argument can also be a string.
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 SELECT name, id FROM project WHERE hidden = ?;
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [true]
@@ -208,16 +220,15 @@ SELECT name, id FROM project WHERE hidden = ?;
 #### join, groupBy and orderBy
 
 ```coffeescript
-m = require('mohair')()
-
-m.select 'project', ['count(task.id) AS taskCount', 'project.*'], ->
-    m.leftJoin 'task', 'project.id' , 'task.project_id'
-    m.where {'project.visible': true}
-    m.groupBy 'project.id'
-    m.orderBy 'project.created_on DESC'
+query = project
+    .select ['count(task.id) AS taskCount', 'project.*']
+    .where {'project.visible': true}
+    .leftJoin 'task', 'project.id', 'task.project_id'
+    .group 'project.id'
+    .order 'project.created_on DESC'
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 SELECT
@@ -230,7 +241,7 @@ GROUP BY project.id
 ORDER BY project.created_on DESC;
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [true]
@@ -240,21 +251,19 @@ ORDER BY project.created_on DESC;
 
 **Note:** `where` takes a query object. see section `Query language` below for details.
 
-#### remove
+#### delete
 
 ```coffeescript
-m = require('mohair')()
-
-m.remove 'project', {id: 7, hidden: true}
+query = project.delete().where {id: 7, hidden: true}
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 DELETE FROM project WHERE id = ? AND hidden = ?;
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [7, true]
@@ -265,14 +274,17 @@ DELETE FROM project WHERE id = ? AND hidden = ?;
 #### transactions
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.transaction ->
-    m.remove 'project', {id: 7}
-    m.update 'project', {name: 'New name'}, {id: 8}
+project = mohair.table 'project'
+
+query = mohair.transaction [
+    project.delete.where {id: 7}
+    project.update({name: 'New name'}).where {id: 8}
+]
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 START TRANSACTION;
@@ -281,7 +293,7 @@ UPDATE project SET name = ? WHERE id = ?;
 COMMIT;
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [7, 'New name', 8]
@@ -289,18 +301,16 @@ COMMIT;
 #### fall back to raw sql with optional parameter bindings
 
 ```coffeescript
-m = require('mohair')()
-
-m.raw 'SELECT * FROM project WHERE id = ?;', 7
+query = mohair.sql 'SELECT * FROM project WHERE id = ?;', 7
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 SELECT * FROM project WHERE id = ?;
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [7]

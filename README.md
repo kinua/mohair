@@ -39,7 +39,96 @@ client.end()
 
 ### Queries
 
-#### insert a single row
+#### select everything
+
+```coffeescript
+mohair = require 'mohair'
+
+project = mohair.table 'project'
+
+query = project.select()
+```
+
+`query.sql()` returns:
+
+```sql
+SELECT * FROM project;
+```
+
+`query.params()` returns:
+
+```coffeescript
+[]
+```
+
+#### select specific columns with a condition
+
+```coffeescript
+mohair = require 'mohair'
+
+project = mohair.table 'project'
+
+query = project.select(['name', 'id']).where {hidden: true}
+```
+
+**Note:** the last argument is a query object. see section `Query language` below for details.
+
+**Note:** the second argument can also be a string.
+
+`query.sql()` returns:
+
+```sql
+SELECT name, id FROM project WHERE hidden = ?;
+```
+
+`query.params()` returns:
+
+```coffeescript
+[true]
+```
+
+#### join, group, order, limit and offset
+
+```coffeescript
+mohair = require 'mohair'
+
+project = mohair.table 'project'
+
+query = project
+    .select ['count(task.id) AS taskCount', 'project.*']
+    .where {'project.visible': true}
+    .leftJoin 'task', 'project.id', 'task.project_id'
+    .group 'project.id'
+    .order 'project.created_on DESC'
+    .limit 10
+    .offset 5
+```
+
+`query.sql()` returns:
+
+```sql
+SELECT
+    count(task.id) AS taskCount,
+    project.*
+FROM project
+LEFT JOIN task ON project.id = task.project_id
+WHERE project.visible = ?
+GROUP BY project.id
+ORDER BY project.created_on DESC;
+```
+
+`query.params()` returns:
+
+```coffeescript
+[true]
+```
+
+**Note:** use `join`, `leftJoin`, `rightJoin`, and `innerJoin` as needed.
+
+**Note:** `where` takes a query object. see section `Query language` below for details.
+
+
+#### insert
 
 ```coffeescript
 mohair = require 'mohair'
@@ -64,7 +153,7 @@ INSERT INTO project (name, owner_id, hidden) VALUES (?, ?, ?);
 ['Amazing Project', 5, false]
 ```
 
-#### insert multiple rows at once
+#### insert many
 
 ```coffeescript
 mohair = require 'mohair'
@@ -91,7 +180,7 @@ INSERT INTO project (name) VALUES (?, ?), (?, ?);
 
 **Note:** When inserting multiple rows all inserted objects must have the same keys.
 
-#### call some sql function inside the insert
+#### use arbitrary sql functions and expressions
 
 ```coffeescript
 mohair = require 'mohair'
@@ -144,7 +233,7 @@ ON DUPLICATE KEY UPDATE name = ?, update_count = update_count + 1;
 ['foo', 'bar', 'bar']
 ```
 
-#### update a row
+#### update
 
 ```coffeescript
 mohair = require 'mohair'
@@ -159,6 +248,8 @@ query.where {id: 7}
 
 **Note:** the last argument is a query object. see section `Query language` below for details.
 
+**Note:** you can call `limit` and `order` on the update query.
+
 `query.sql()` returns:
 
 ```sql
@@ -170,92 +261,6 @@ UPDATE project SET name = ?, hidden = ? WHERE id = ?;
 ```coffeescript
 ['Even more amazing project', true, 7]
 ```
-
-#### select everything
-
-```coffeescript
-mohair = require 'mohair'
-
-project = mohair.table 'project'
-
-query = project.select()
-```
-
-`query.sql()` returns:
-
-```sql
-SELECT * FROM project;
-```
-
-`query.params()` returns:
-
-```coffeescript
-[]
-```
-
-#### select specific columns with a condition
-
-```coffeescript
-mohair = require 'mohair'
-
-project = mohair.table 'project'
-
-query = project.select(['name', 'id']).where {hidden: true}
-```
-
-**Note:** the last argument is a query object. see section `Query language` below for details.
-
-**Note:** the second argument can also be a string.
-
-`query.sql()` returns:
-
-```sql
-SELECT name, id FROM project WHERE hidden = ?;
-```
-
-`query.params()` returns:
-
-```coffeescript
-[true]
-```
-
-#### join, groupBy and orderBy
-
-```coffeescript
-mohair = require 'mohair'
-
-project = mohair.table 'project'
-
-query = project
-    .select ['count(task.id) AS taskCount', 'project.*']
-    .where {'project.visible': true}
-    .leftJoin 'task', 'project.id', 'task.project_id'
-    .group 'project.id'
-    .order 'project.created_on DESC'
-```
-
-`query.sql()` returns:
-
-```sql
-SELECT
-    count(task.id) AS taskCount,
-    project.*
-FROM project
-LEFT JOIN task ON project.id = task.project_id
-WHERE project.visible = ?
-GROUP BY project.id
-ORDER BY project.created_on DESC;
-```
-
-`query.params()` returns:
-
-```coffeescript
-[true]
-```
-
-**Note:** use `join`, `leftJoin`, `rightJoin`, and `innerJoin` as needed.
-
-**Note:** `where` takes a query object. see section `Query language` below for details.
 
 #### delete
 
@@ -274,6 +279,8 @@ DELETE FROM project WHERE id = ? AND hidden = ?;
 ```coffeescript
 [7, true]
 ```
+
+**Note:** you can call `limit` and `order` on the delete query.
 
 **Note:** the last argument is a query object. see section `Query language` below for details.
 
@@ -304,22 +311,22 @@ COMMIT;
 ```coffeescript
 [7, 'New name', 8]
 ```
-#### fall back to raw sql with optional parameter bindings
+#### raw sql
 
 ```coffeescript
-query = mohair.sql 'SELECT * FROM project WHERE id = ?;', 7
+query = mohair.sql 'SELECT * FROM project WHERE id = ? AND name = ?;', 7, 'foo'
 ```
 
 `query.sql()` returns:
 
 ```sql
-SELECT * FROM project WHERE id = ?;
+SELECT * FROM project WHERE id = ? AND name = ?;
 ```
 
 `query.params()` returns:
 
 ```coffeescript
-[7]
+[7, 'foo']
 ```
 
 ### Query language
@@ -329,24 +336,24 @@ inspired by the [mongo query language](http://www.mongodb.org/display/DOCS/Advan
 #### query objects
 
 sql is generated from query objects by using the keys as column names,
-binding or calling the values and interspersing 'AND':
+binding the values and interspersing 'AND':
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.query
+query = mohair.query
     id: 7
     hidden: true
-    name: -> m.quoted 'Another project'
+    name: mohair.sql "'Another project'"
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 id = ? AND hidden = ? AND name = 'Another project'
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [7, true]
@@ -357,18 +364,18 @@ id = ? AND hidden = ? AND name = 'Another project'
 you can change the default comparison operator '=' as follows:
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.query
+query = mohair.query
     id: 7
     name: {$ne: -> quoted 'Another project'}
     owner_id: {$lt: 10}
     category_id: {$lte: 4}
-    deadline: {$gt: -> m.raw 'NOW()'}
+    deadline: {$gt: mohair.sql 'NOW()'}
     cost: {$gte: 7000}
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 id = ? AND
@@ -379,7 +386,7 @@ deadline > NOW() AND
 cost >= ?
 ```
 
-`params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [7, 10, 4, 7000]
@@ -390,19 +397,19 @@ cost >= ?
 select rows where column `id` has one of the values: `3, 5, 8, 9`:
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.query
+query = mohair.query
     id: {$in: [3, 5, 8, 9]}
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 id IN (?, ?, ?, ?)
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [3, 5, 8, 9]
@@ -415,19 +422,19 @@ id IN (?, ?, ?, ?)
 the special key `$not` takes a query object and negates it:
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.query
+query = mohair.query
     $not: {id: {$in: [3, 5, 8, 9]}}
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 NOT (id IN (?, ?, ?, ?))
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [3, 5, 8, 9]
@@ -439,23 +446,23 @@ the special key `$or` takes an array of query objects and generates a querystrin
 where only one of the queries must match:
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.query
+query = mohair.query
     $or: [
         {id: 7}
-        {name: -> quoted 'Another project'}
+        {name: mohair.sql "'Another project'"}
         {owner_id: 10}
     ]
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 id = ? OR name = 'Another project' OR owner_id = ?
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [7, 10]
@@ -472,9 +479,9 @@ where all of the queries must match.
 `$and` and `$or` can be nested:
 
 ```coffeescript
-m = require('mohair')()
+mohair = require 'mohair'
 
-m.query
+query = mohair.query
     id: 7
     $or: [
         {owner_id: 10}
@@ -485,13 +492,13 @@ m.query
     ]
 ```
 
-`m.sql()` returns:
+`query.sql()` returns:
 
 ```sql
 id = ? AND (owner_id = ? OR cost > ? AND cost < ?)
 ```
 
-`m.params()` returns:
+`query.params()` returns:
 
 ```coffeescript
 [7, 10, 500, 1000]

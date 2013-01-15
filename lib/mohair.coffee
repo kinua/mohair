@@ -118,6 +118,22 @@ module.exports =
 
     connect: (conn) -> @set '_connect', conn
 
+    first: (fn) ->
+        @_connect.query @sql(), @params(), (err, results) ->
+            fn err, results[0]
+
+    find: (fn) ->
+        @_connect.query @sql(), @params(), (err, results) ->
+            fn err, results
+
+    exists: (fn) ->
+        @_connect.query @sql(), @params(), (err, results) ->
+            fn err, null if err
+            if results.length
+                fn null, true
+            else
+                fn null, false
+            
     exec: (fn) ->
         @_connect.query @sql(), @params(), (err, results) ->
             fn err, results

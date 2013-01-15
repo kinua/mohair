@@ -120,7 +120,7 @@ module.exports =
 
     first: (fn) ->
         @_connect.query @sql(), @params(), (err, results) ->
-            fn err, results[0]
+            fn err, results?[0]
 
     find: (fn) ->
         @_connect.query @sql(), @params(), (err, results) ->
@@ -128,8 +128,9 @@ module.exports =
 
     exists: (fn) ->
         @_connect.query @sql(), @params(), (err, results) ->
-            fn err, null if err
-            if results.length
+            if err
+                fn err
+            else if results.length
                 fn null, true
             else
                 fn null, false

@@ -128,9 +128,8 @@ module.exports =
 
     exists: (fn) ->
         @_connect.query @sql(), @params(), (err, results) ->
-            if err
-                fn err
-            else if results.length
+            return fn err if err
+            if results.length
                 fn null, true
             else
                 fn null, false

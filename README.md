@@ -4,11 +4,7 @@
 
 mohair is an sql builder for nodejs
 
-### install
-
-    npm install mohair
-
-### use
+Fork from [snd/mohair](https://github.com/snd/mohair). For my personal use.
 
 ##### use a table
 
@@ -162,6 +158,37 @@ mohair
         create: '2012'
     .exec (err, result) ->
       console.log result
+```
+
+##### first
+
+```coffeescript
+mohair
+    .connect(conn)
+    .table('test')
+    .where(id: 1)
+    .first (err, result) -> #...
+```
+
+##### exists
+
+```coffeescript
+mohair
+    .connect(conn)
+    .table('test')
+    .where(id: 1)
+    .exists (err, exists) -> #...
+```
+
+##### find
+
+Alias of exec
+
+```coffeescript
+mohair
+    .connect(conn)
+    .table('test')
+    .find (err, results) -> #...
 ```
 
 ##### immutability

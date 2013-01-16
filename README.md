@@ -160,15 +160,31 @@ mohair
       console.log result
 ```
 
-##### first
+##### find
+
+Alias of exec
+
+```coffeescript
+mohair
+    .connect(conn)
+    .select()
+    .table('test')
+    .find (err, results) -> #...
+```
+
+##### findOne
 
 ```coffeescript
 mohair
     .connect(conn)
     .table('test')
     .where(id: 1)
-    .first (err, result) -> #...
+    .findOne (err, result) -> #...
 ```
+
+##### first
+
+Alias of findOne
 
 ##### exists
 
@@ -178,17 +194,6 @@ mohair
     .table('test')
     .where(id: 1)
     .exists (err, exists) -> #...
-```
-
-##### find
-
-Alias of exec
-
-```coffeescript
-mohair
-    .connect(conn)
-    .table('test')
-    .find (err, results) -> #...
 ```
 
 ##### immutability

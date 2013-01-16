@@ -118,13 +118,19 @@ module.exports =
 
     connect: (conn) -> @set '_connect', conn
 
-    first: (fn) ->
+    exec: (fn) ->
+        @_connect.query @sql(), @params(), (err, results) ->
+            fn err, results
+
+    find: (fn) ->
+        @exec fn
+
+    findOne: (fn) ->
         @_connect.query @sql(), @params(), (err, results) ->
             fn err, results?[0]
 
-    find: (fn) ->
-        @_connect.query @sql(), @params(), (err, results) ->
-            fn err, results
+    first: (fn) ->
+        @findOne fn
 
     exists: (fn) ->
         @_connect.query @sql(), @params(), (err, results) ->
@@ -133,7 +139,3 @@ module.exports =
                 fn null, true
             else
                 fn null, false
-            
-    exec: (fn) ->
-        @_connect.query @sql(), @params(), (err, results) ->
-            fn err, results

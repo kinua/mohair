@@ -1,33 +1,37 @@
 {
-    "name": "mohair",
-    "version": "1.0.0",
-    "description": "mohair is an sql builder",
-    "homepage": "http://github.com/snd/mohair",
-    "author": {
-        "name": "Maximilian Krüger",
-        "email": "kruemaxi@gmail.com",
-        "url": "http://github.com/snd"
-    },
-    "bugs": {
-        "url": "http://github.com/snd/mohair/issues",
-        "email": "kruemaxi@gmail.com"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/snd/mohair.git"
-    },
-    "licenses": {
-        "type": "MIT",
-        "url": "git://github.com/snd/mohair/LICENSE"
-    },
-    "engines": {
-        "node": ">=0.8.5"
-    },
-    "dependencies": {
-        "coffee-script": "1.4.0",
-        "criterion": "0.2.1"
-    },
-    "devDependencies": {
-        "nodeunit": "0.7.4"
-    }
+  "name": "mohair",
+  "version": "1.0.0",
+  "description": "mohair is an sql builder",
+  "homepage": "http://github.com/snd/mohair",
+  "main": "lib/mohair.js",
+  "author": {
+    "name": "Maximilian Krüger",
+    "email": "kruemaxi@gmail.com",
+    "url": "http://github.com/snd"
+  },
+  "bugs": {
+    "url": "http://github.com/snd/mohair/issues",
+    "email": "kruemaxi@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/snd/mohair.git"
+  },
+  "licenses": {
+    "type": "MIT",
+    "url": "git://github.com/snd/mohair/LICENSE"
+  },
+  "engines": {
+    "node": ">=0.8.5"
+  },
+  "dependencies": {
+    "criterion": "0.2.1"
+  },
+  "devDependencies": {
+    "coffee-script": "1.7.1",
+    "nodeunit": "0.7.4",
+    "gulp-coffee": "~1.4.1",
+    "gulp": "~3.5.2",
+    "gulp-util": "~2.2.14"
+  }
 }

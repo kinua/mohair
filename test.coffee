@@ -1,4 +1,4 @@
-mohair = require './index'
+mohair = require './lib/mohair'
 
 module.exports =
 
